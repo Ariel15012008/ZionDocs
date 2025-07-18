@@ -1,46 +1,32 @@
 "use client";
 
-import type React from "react";
 import { useState } from "react";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
 import { motion } from "framer-motion";
 import { User, Mail, Lock, Eye, EyeOff } from "lucide-react";
 import type { Variants } from "framer-motion";
 import { easeOut } from "framer-motion";
 import FloatingParticles from "./floating-particles";
+import api from "@/utils/axiosInstance";
 
-// Mock components for demonstration
-const Button = ({ children, onClick, className, style, type }: any) => (
-  <button onClick={onClick} className={className} style={style} type={type}>
-    {children}
-  </button>
-);
+const schema = z.object({
+  email: z.string().email("E-mail inválido"),
+  senha: z.string().min(6, "Mínimo de 6 caracteres"),
+});
 
-const Input = ({
-  type,
-  placeholder,
-  value,
-  onChange,
-  className,
-  required,
-}: any) => (
-  <input
-    type={type}
-    placeholder={placeholder}
-    value={value}
-    onChange={onChange}
-    className={className}
-    required={required}
-  />
-);
-
-const SocialIcons = () => <div></div>;
+type FormData = z.infer<typeof schema>;
 
 export default function LoginForm() {
   const [showPassword, setShowPassword] = useState(false);
-  const [formData, setFormData] = useState({
-    username: "",
-    password: "",
-    rememberMe: false,
+
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+  } = useForm<FormData>({
+    resolver: zodResolver(schema),
   });
 
   const containerVariants: Variants = {
@@ -70,9 +56,16 @@ export default function LoginForm() {
     },
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    console.log("Login attempt:", formData);
+  const onSubmit = async (data: FormData) => {
+    try {
+      const response = await api.post("/users/login", data);
+      console.log("Login realizado:", response.data);
+      alert("Login realizado com sucesso!");
+      // redirecionamento ou armazenamento de token aqui
+    } catch (error: any) {
+      console.error("Erro no login:", error.response?.data || error.message);
+      alert("Falha no login: verifique seu e-mail e senha.");
+    }
   };
 
   return (
@@ -85,8 +78,7 @@ export default function LoginForm() {
         animate="visible"
         whileHover={{
           y: -5,
-          boxShadow:
-            "0 15px 75px rgba(6, 128, 241, 0.5), 0 0 30px rgba(64, 156, 255, 0.3)",
+          boxShadow: "0 15px 75px rgba(6, 128, 241, 0.5), 0 0 30px rgba(64, 156, 255, 0.3)",
           transition: {
             duration: 0.3,
             ease: "easeOut",
@@ -94,8 +86,7 @@ export default function LoginForm() {
         }}
         className="relative w-full max-w-md p-8 bg-slate-900/85 backdrop-blur-xl rounded-2xl border border-blue-500/20 shadow-2xl overflow-hidden z-10 mx-4"
         style={{
-          boxShadow:
-            "0 5px 75px rgba(6, 128, 241, 0.3), 0 0 20px rgba(64, 156, 255, 0.1)",
+          boxShadow: "0 5px 75px rgba(6, 128, 241, 0.3), 0 0 20px rgba(64, 156, 255, 0.1)",
         }}
       >
         {/* Shine Effect */}
@@ -115,7 +106,7 @@ export default function LoginForm() {
           }}
         />
 
-        {/* Header com ícone */}
+        {/* Header */}
         <motion.div variants={itemVariants} className="text-center mb-10">
           <motion.div
             initial={{ scale: 0.5, opacity: 0, y: -20 }}
@@ -126,77 +117,68 @@ export default function LoginForm() {
             <User className="w-12 h-12 text-blue-400 drop-shadow-lg" />
           </motion.div>
 
-          <motion.h1
-            className="text-2xl font-semibold text-gray-100 mb-3 tracking-wide"
-            style={{ textShadow: "0 2px 5px rgba(0, 0, 0, 0.2)" }}
-          >
+          <motion.h1 className="text-2xl font-semibold text-gray-100 mb-3 tracking-wide">
             Acesso
           </motion.h1>
-          <motion.p className="text-gray-300 text-lg font-medium ">
+          <motion.p className="text-gray-300 text-lg font-medium">
             Por favor, faça login para continuar
           </motion.p>
           <motion.div
             className="w-16 h-1 mx-auto mt-4 rounded-full"
-            style={{
-              background:
-                "linear-gradient(90deg, transparent, #409cff, transparent)",
-            }}
+            style={{ background: "linear-gradient(90deg, transparent, #409cff, transparent)" }}
             initial={{ width: 0 }}
             animate={{ width: 64 }}
             transition={{ delay: 0.5, duration: 0.8 }}
           />
         </motion.div>
 
-        {/* Formulário */}
-        <div className="space-y-6">
+        {/* Form */}
+        <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+          {/* Email */}
           <motion.div variants={itemVariants}>
             <div className="relative">
               <Mail className="absolute left-4 top-1/2 transform -translate-y-1/2 text-blue-400 w-5 h-5 z-10" />
-              <Input
-                type="text"
-                placeholder="Nome de usuário ou e-mail"
-                value={formData.username}
-                onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-                  setFormData({ ...formData, username: e.target.value })
-                }
-                className="w-full pl-12 pr-4 py-3 text-sm bg-slate-800/70 border border-blue-500/20 rounded-lg text-gray-100 focus:border-blue-500/80 focus:ring-2 focus:ring-blue-500/20 focus:bg-slate-700/70 transition-all duration-300"
-                required
+              <input
+                type="email"
+                {...register("email")}
+                placeholder="E-mail"
+                className="w-full pl-12 pr-4 py-3 text-sm bg-slate-800/70 border border-blue-500/20 rounded-lg text-gray-100"
               />
+              {errors.email && (
+                <p className="text-red-400 text-xs mt-1">
+                  {errors.email.message}
+                </p>
+              )}
             </div>
           </motion.div>
 
+          {/* Senha */}
           <motion.div variants={itemVariants}>
             <div className="relative">
               <Lock className="absolute left-3 top-1/2 -translate-y-1/2 text-blue-400 w-4 h-4" />
-              <Input
+              <input
                 type={showPassword ? "text" : "password"}
+                {...register("senha")}
                 placeholder="Senha"
-                value={formData.password}
-                onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-                  setFormData({ ...formData, password: e.target.value })
-                }
-                className="text-gray-100 w-full pl-10 pr-8 py-2.5 text-sm bg-slate-800/70 border border-blue-500/20 rounded-lg focus:border-blue-500/80 focus:ring-2 focus:ring-blue-500/20 focus:bg-slate-700/70 transition-all duration-200"
-                required
+                className="text-gray-100 w-full pl-10 pr-8 py-2.5 text-sm bg-slate-800/70 border border-blue-500/20 rounded-lg"
               />
               <button
                 type="button"
                 onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-2 top-1/2 -translate-y-1/2 p-1 text-gray-400 hover:text-blue-400 rounded-md hover:bg-slate-700/30 transition-colors duration-150 focus:outline-none focus:ring-1 focus:ring-blue-500/30"
-                aria-label={showPassword ? "Ocultar senha" : "Mostrar senha"}
+                className="absolute right-2 top-1/2 -translate-y-1/2 p-1 text-gray-400"
               >
-                {showPassword ? (
-                  <EyeOff className="w-4 h-4" />
-                ) : (
-                  <Eye className="w-4 h-4" />
-                )}
+                {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
               </button>
+              {errors.senha && (
+                <p className="text-red-400 text-xs mt-1">
+                  {errors.senha.message}
+                </p>
+              )}
             </div>
           </motion.div>
 
-          <motion.div
-            variants={itemVariants}
-            className="flex justify-end items-center text-sm"
-          >
+          {/* Esqueceu a senha */}
+          <motion.div variants={itemVariants} className="flex justify-end text-sm">
             <motion.a
               href="#"
               className="text-[#646cff] hover:text-blue-500 hover:underline transition-all duration-300 hover:scale-105"
@@ -205,20 +187,17 @@ export default function LoginForm() {
             </motion.a>
           </motion.div>
 
+          {/* Botão Login */}
           <motion.div variants={itemVariants}>
             <motion.div
-              whileHover={{
-                y: -2,
-                boxShadow: "0 6px 20px rgba(64, 156, 255, 0.4)",
-              }}
+              whileHover={{ y: -2, boxShadow: "0 6px 20px rgba(64, 156, 255, 0.4)" }}
               whileTap={{ y: 0 }}
               className="relative overflow-hidden rounded-lg"
             >
-              <Button
+              <button
                 type="submit"
-                className="w-full py-3 text-sm bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-400 hover:to-blue-500 text-white font-medium rounded-lg transition-all duration-300 relative overflow-hidden"
+                className="w-full py-3 text-sm bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-400 hover:to-blue-500 text-white font-medium rounded-lg"
                 style={{ boxShadow: "0 4px 15px rgba(64, 156, 255, 0.3)" }}
-                onClick={handleSubmit}
               >
                 <span className="relative text-[20px] z-10">Entrar</span>
                 <motion.div
@@ -235,28 +214,22 @@ export default function LoginForm() {
                     ease: "linear",
                   }}
                 />
-              </Button>
+              </button>
             </motion.div>
           </motion.div>
 
-          <motion.div variants={itemVariants}>
-            <SocialIcons />
-          </motion.div>
-
-          <motion.div
-            variants={itemVariants}
-            className="text-center text-sm text-gray-400"
-          >
+          {/* Criar conta */}
+          <motion.div variants={itemVariants} className="text-center text-sm text-gray-400">
             Não tem uma conta?{" "}
             <motion.a
-              href="#"
+              href="/register"
               className="text-blue-400 font-medium hover:text-blue-300 hover:underline transition-all duration-300"
               whileHover={{ scale: 1.05 }}
             >
               Registre-se
             </motion.a>
           </motion.div>
-        </div>
+        </form>
       </motion.div>
     </div>
   );
