@@ -10,9 +10,10 @@ import type { Variants } from "framer-motion";
 import { easeOut } from "framer-motion";
 import FloatingParticles from "./floating-particles";
 import api from "@/utils/axiosInstance";
+import { useNavigate } from "react-router-dom";
 
 const schema = z.object({
-  email: z.string().email("E-mail inválido"),
+  email: z.email("E-mail inválido"),
   senha: z.string().min(6, "Mínimo de 6 caracteres"),
 });
 
@@ -20,6 +21,7 @@ type FormData = z.infer<typeof schema>;
 
 export default function LoginForm() {
   const [showPassword, setShowPassword] = useState(false);
+  const navigate = useNavigate(); 
 
   const {
     register,
@@ -61,7 +63,7 @@ export default function LoginForm() {
       const response = await api.post("/users/login", data);
       console.log("Login realizado:", response.data);
       alert("Login realizado com sucesso!");
-      // redirecionamento ou armazenamento de token aqui
+      navigate("/"); // ✅ REDIRECIONAMENTO ADICIONADO
     } catch (error: any) {
       console.error("Erro no login:", error.response?.data || error.message);
       alert("Falha no login: verifique seu e-mail e senha.");

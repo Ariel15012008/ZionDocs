@@ -33,7 +33,7 @@ export default function Home() {
     document.title = "Painel do Trabalhador"
     const verificarSessao = async () => {
       try {
-        await api.get("/user/me")
+        await api.get("/users/me")
         setIsAuthenticated(true)
         setLoadingDocs(true)
         const [resDocs, resTemplates] = await Promise.all([
