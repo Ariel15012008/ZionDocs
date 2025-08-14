@@ -28,7 +28,7 @@ export default function Header() {
 
   const silentAuth = async () => {
     try {
-      const res = await api.get<UserData>("/user00s/me");
+      const res = await api.get<UserData>("/users/me");
       if (res.status === 200) {
         setUser({ nome: res.data.nome, email: res.data.email });
         setIsAuthenticated(true);
